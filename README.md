@@ -1,8 +1,8 @@
 # comp346_a3
 
 ------------------------------------------------------------------------------------
-Dominique Proulx - 40177566
-Katya 
+- Dominique Proulx - 40177566
+- Katya 
   
 COMP 346
 Programming Assignment 3 

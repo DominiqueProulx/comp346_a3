@@ -23,6 +23,8 @@ public class Philosopher extends BaseThread
 	 */
 	public void eat()
 	{
+		System.out.println("I philosopher number "  + getTID() + " have  started Eating");
+		Thread.yield();
 		try
 		{
 			// ...
@@ -35,6 +37,8 @@ public class Philosopher extends BaseThread
 			DiningPhilosophers.reportException(e);
 			System.exit(1);
 		}
+		Thread.yield();
+		System.out.println("I philosopher number "  + getTID() + " am done Eating");
 	}
 
 	/**
@@ -48,6 +52,23 @@ public class Philosopher extends BaseThread
 	public void think()
 	{
 		// ...
+		System.out.println("I philosopher number "  + getTID() + " have  started thinking");
+		Thread.yield();
+		try
+		{
+			// ...
+			sleep((long)(Math.random() * TIME_TO_WASTE));
+			// ...
+		}
+		catch(InterruptedException e)
+		{
+			System.err.println("Philosopher.eat():");
+			DiningPhilosophers.reportException(e);
+			System.exit(1);
+		}
+		Thread.yield();
+		
+		System.out.println("I philosopher number "  + getTID() + " am done thinking");
 	}
 
 	/**
@@ -61,8 +82,11 @@ public class Philosopher extends BaseThread
 	public void talk()
 	{
 		// ...
-
+		System.out.println("I philosopher number " + getTID() + " have  started Talking");
+		Thread.yield();
 		saySomething();
+		Thread.yield();
+		System.out.println("I philosopher number "  + getTID() + "sm done Talking");
 
 		// ...
 	}
@@ -90,11 +114,14 @@ public class Philosopher extends BaseThread
 			if(true == false)
 			{
 				// Some monitor ops down here...
-				talk();
-				// ...
+				DiningPhilosophers.soMonitor.requestTalk(getTID());
+				
+				talk(); 
+				
+				DiningPhilosophers.soMonitor.endTalk(getTID());
 			}
 
-			yield();
+			Thread.yield();  //modified this line to add Thread.
 		}
 	} // run()
 

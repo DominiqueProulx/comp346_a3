@@ -1,22 +1,22 @@
 # comp346_a3
 
-*------------------------------------------------------------------------------------
- * Dominique Proulx - 40177566
- * Katya 
- * COMP 346
- * Programming Assignment 3 -
- * Due date : April 15th 2024
- * 
- * ----------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
+Dominique Proulx - 40177566
+Katya 
+  
+COMP 346
+Programming Assignment 3 
+Due date : April 14th 2024
+ 
+----------------------------------------------------------------------------------
   
   
   
  Questions/Todo  :
  
- - what makes philosophers want to talk?
  - need to capture user input for number of philosophers
  - Need to create the philosophers
- - Need to 
+
   -------------------------------------
  Information 
   -------------------------------------
@@ -34,7 +34,6 @@ Files distributed with the assignment requirements:
 - Monitor.java - the monitor for the system
 - Makefile - take a look
 
- 
  
  -------------------------------------
  Pseudocode
@@ -96,8 +95,8 @@ test(i)
  
 putDown(i)
  status[i]='Thinking'
- test( i (n-1) % n)
- test( i (n+1) % n)
+ test( i +(n-1) % n)
+ test( i + (n+1) % n)
 
 
 ***** to talk : ******

@@ -16,6 +16,8 @@ Due date : April 14th 2024
  
  - need to capture user input for number of philosophers
  - Need to create the philosophers
+ - Implement talk : endTalk(), test2() , requestTalk()
+ - find the problem with the condition :S
 
   -------------------------------------
  Information 

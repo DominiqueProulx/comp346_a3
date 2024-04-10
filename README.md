@@ -130,7 +130,8 @@ endTalk(i)
   for i= 0 to n-1 do
     test2(i)  // tell everybody to test themselves. Since I am thinking it will do nothing for me.
  	
- 
+ ![image](https://github.com/DominiqueProulx/comp346_a3/assets/129322102/0f0e5add-d7c8-4d8d-b248-4b75fda96a3a)
+
  
  
  

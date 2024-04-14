@@ -31,8 +31,10 @@ public class Monitor
 		
 	//Monitor conditions
 
-	Condition myself_T; //condition for talking
-	Condition myself_E; //condition for eating
+	Object myself_T;
+	Object myself_E;
+	
+	boolean someoneTalking;
 
 	/**
 	 * Constructor
@@ -40,17 +42,21 @@ public class Monitor
 	public Monitor(int piNumberOfPhilosophers)
 	{
 		// TODO: set appropriate number of chopsticks based on the # of philosophers
-		 nbOfChopsticks = piNumberOfPhilosophers; 
-		
+		nbOfChopsticks = piNumberOfPhilosophers; 
+		myself_T = new Object();
+	    myself_E = new Object();
+	    
 		//
 		
 		// Create the status array for the philosophers
-		 status = new Status[piNumberOfPhilosophers];
+		status = new Status[piNumberOfPhilosophers];
 		
 		//Set all philosophers to thinking at first
 		for( int i = 0 ; i< piNumberOfPhilosophers ; i++) {
 			status[i] = Status.Thinking;
 		}
+		//Nobody is talking because all are thinking
+		boolean someoneTalking=false;
 	}
 
 	/*
@@ -74,7 +80,9 @@ public class Monitor
 		test(piTID-1); // will return eating after this if it could
 		if(status[piTID-1] != Status.Hungry) {    //If I didnt return hungry , await for signal.
 			try {
-				myself_E.await();    
+				synchronized (myself_E) {
+	                myself_E.wait();
+				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -95,17 +103,19 @@ public class Monitor
 	}
 
 	/**
-	 * Only one philopher at a time is allowed to philosophy
+	 * Only one philosopher at a time is allowed to philosophy
 	 * (while she is not eating).
 	 */
 	public synchronized void requestTalk(final int piTID)
 	{
-		status[piTID] = Status.Talkative;
-		testTalk(piTID);
-		if (status[piTID] != Status.Talking) {
+		status[piTID-1] = Status.Talkative;
+		testTalk(piTID-1);
+		if (status[piTID-1] != Status.Talking) {
 			//Await
 			try {
-				myself_T.await();
+				synchronized (myself_T) {
+	                myself_T.wait();
+				}
 			}
 			catch (InterruptedException e){
 				e.printStackTrace();
@@ -120,9 +130,11 @@ public class Monitor
 	 */
 	public synchronized void endTalk(final int piTID)
 	{
-		state[piTID] = Status.Thinking;
-		testTalk((piTID-1)% nbOfChopsticks);
-		testTalk((piTID+1)% nbOfChopsticks);
+		status[piTID-1] = Status.Thinking;
+		for (int j=0; j<nbOfChopsticks; j++) {
+			if (status[j]==Status.Talkative) 
+				testTalk(j);
+		}
 	}
 	//Do not remove 1 for the array index as it was removed when calling the method.
 	private synchronized void test(int philosopherID) {  // added to test neighbors philosophers for eating
@@ -131,24 +143,30 @@ public class Monitor
 				(status[philosopherID] == Status.Hungry)) //and i'm hungry
 		{
 			status[philosopherID] = Status.Eating; // set my status to eating
-			myself_E.signal(); // Signal the condition for eating. 
+			 synchronized (myself_E) {
+				 myself_E.notify(); // Signal the condition for eating. 
+			 }
 		}
 	}
 	
 	private synchronized void testTalk(int i) { 
-		boolean someoneTalking=false;
-		for (j=0; j<nbOfChpsticks; j++) {
+
+		
+		for (int j=0; j<nbOfChopsticks; j++) {
 			if (status[j]==Status.Talking){
 				someoneTalking=true;
 				break;
-			}			
+			}
+			else someoneTalking=false;
 		}
 			
-		if (state[i] == Status.Talkative && 	//I want to talk
+		if (status[i] == Status.Talkative && 	//I want to talk
 				someoneTalking != true){		//and no one is talking
 				
 			status [i] = Status.Talking;
-			myself_T.signal();
+			synchronized(myself_T) {
+				myself_T.notify();
+			}
 		}
 	}
 }

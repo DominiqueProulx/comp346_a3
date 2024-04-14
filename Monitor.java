@@ -29,7 +29,7 @@ public class Monitor
 	
 	int nbOfChopsticks;  // there are as many chopsticks as there are philosophers sitting at the table.
 		
-	//Monitor conditions
+	//Monitor conditions implemented as object
 
 	Object myself_T;
 	Object myself_E;

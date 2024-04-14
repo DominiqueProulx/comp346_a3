@@ -100,7 +100,18 @@ public class Monitor
 	 */
 	public synchronized void requestTalk(final int piTID)
 	{
-		// ...
+		status[piTID] = Status.Talkative;
+		testTalk(piTID);
+		if (status[piTID] != Status.Talking) {
+			//Await
+			try {
+				myself_T.await();
+			}
+			catch (InterruptedException e){
+				e.printStackTrace();
+			}
+		}
+		
 	}
 
 	/**
@@ -109,10 +120,12 @@ public class Monitor
 	 */
 	public synchronized void endTalk(final int piTID)
 	{
-		// ...
+		state[piTID] = Status.Thinking;
+		testTalk((piTID-1)% nbOfChopsticks);
+		testTalk((piTID+1)% nbOfChopsticks);
 	}
-	//Do not remove 1 for the arrya index as it was removed when calling the method.
-	public synchronized void test(int philosopherID) {  // added to test neighbors philosophers for eating
+	//Do not remove 1 for the array index as it was removed when calling the method.
+	private synchronized void test(int philosopherID) {  // added to test neighbors philosophers for eating
 		if((status[ (philosopherID + (nbOfChopsticks - 1 ))% nbOfChopsticks] != Status.Eating) &&  // left neighbour not eating
 				(status[(philosopherID + (nbOfChopsticks + 1) )% nbOfChopsticks] != Status.Eating) && //right neighbour not eating
 				(status[philosopherID] == Status.Hungry)) //and i'm hungry
@@ -122,9 +135,22 @@ public class Monitor
 		}
 	}
 	
-	public synchronized void test2(int philosopherID) {  // added to test other philosophers for talking
-		
+	private synchronized void testTalk(int i) { 
+		boolean someoneTalking=false;
+		for (j=0; j<nbOfChpsticks; j++) {
+			if (status[j]==Status.Talking){
+				someoneTalking=true;
+				break;
+			}			
+		}
+			
+		if (state[i] == Status.Talkative && 	//I want to talk
+				someoneTalking != true){		//and no one is talking
+				
+			status [i] = Status.Talking;
+			myself_T.signal();
+		}
 	}
 }
 
-// EOF
+

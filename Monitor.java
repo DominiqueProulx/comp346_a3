@@ -69,7 +69,7 @@ public class Monitor
 	 * Grants request (returns) to eat when both chopsticks/forks are available.
 	 * Else forces the philosopher to wait()
 	 */
-	public synchronized void pickUp(final int piTID)   //
+	public void pickUp(final int piTID)   //
 	/**pickup(me) : make philosopher hungry , then test neightbours. 
 	in the test:  if my left neighbour is not eating , and my right neightbour is not eating, and I am hungry, then eat. 
 	signal yourself to eat!  myself.signal()   -- if I was waiting before, I will eat, if I was not, it will be lost and okay.
@@ -106,7 +106,7 @@ public class Monitor
 	 * Only one philosopher at a time is allowed to philosophy
 	 * (while she is not eating).
 	 */
-	public synchronized void requestTalk(final int piTID)
+	public void requestTalk(final int piTID)
 	{
 		status[piTID-1] = Status.Talkative;
 		testTalk(piTID-1);

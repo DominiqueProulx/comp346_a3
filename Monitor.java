@@ -30,9 +30,9 @@ public class Monitor
 	int nbOfChopsticks;  // there are as many chopsticks as there are philosophers sitting at the table.
 		
 	//Monitor conditions implemented as object
-
-	Object myself_T;
-	Object myself_E;
+	
+	Object talkCondition;
+	Object[] eatCondition;
 	
 	boolean someoneTalking;
 
@@ -43,20 +43,23 @@ public class Monitor
 	{
 		// TODO: set appropriate number of chopsticks based on the # of philosophers
 		nbOfChopsticks = piNumberOfPhilosophers; 
-		myself_T = new Object();
-	    myself_E = new Object();
+		
 	    
 		//
 		
 		// Create the status array for the philosophers
 		status = new Status[piNumberOfPhilosophers];
+		talkCondition = new Object();
+		eatCondition = new Object[piNumberOfPhilosophers];
 		
-		//Set all philosophers to thinking at first
+		//Set all philosophers to thinking at first, and intialize the condition arrays
 		for( int i = 0 ; i< piNumberOfPhilosophers ; i++) {
 			status[i] = Status.Thinking;
+			
+		    eatCondition[i] = new Object();
 		}
 		//Nobody is talking because all are thinking
-		boolean someoneTalking=false;
+		someoneTalking=false;
 	}
 
 	/*
@@ -65,23 +68,57 @@ public class Monitor
 	 * -------------------------------
 	 */
 
-	/**
-	 * Grants request (returns) to eat when both chopsticks/forks are available.
-	 * Else forces the philosopher to wait()
-	 */
-	public void pickUp(final int piTID)   //
-	/**pickup(me) : make philosopher hungry , then test neightbours. 
-	in the test:  if my left neighbour is not eating , and my right neightbour is not eating, and I am hungry, then eat. 
-	signal yourself to eat!  myself.signal()   -- if I was waiting before, I will eat, if I was not, it will be lost and okay.
-	if when I come back from the test I am not eating , aka -- left neighbour or right neighbour is eating or I am not hungry: myself.wait()  
-	**/
+	/*
+	 * -------------------------------
+	 * EATING
+	 * -------------------------------
+	 * Logic:
+	 * pickUp(me) : make philosopher hungry , then test neighbours. 
+	 * test:  if my left neighbour is not eating , and my right neightbour is not eating, and I am hungry, then eat. 
+	 * signal yourself to eat!  myself.signal()   -- if I was waiting before, I will eat, if I was not, it will be lost and okay.
+	 * if when I come back from the test I am not eating , aka -- left neighbour or right neighbour is eating or I am not hungry: myself.wait()  
+	 **/
+	 
+	
+	//Needed to test neighbours. 
+	private synchronized void testEat(int philosopherID) {
+		//No need to subtrat 1 since was done when passing as parameter
+		int left = (philosopherID -1 + nbOfChopsticks) % nbOfChopsticks;
+		int right = (philosopherID + 1 + nbOfChopsticks) % nbOfChopsticks;
+		
+		//Checking that left and right neighbours are not eating and that I am hungry
+		if((status[left] != Status.Eating) && 
+			(status[right] != Status.Eating) &&
+			(status[philosopherID] == Status.Hungry)){
+			
+			//Set my status to eating
+			status[philosopherID] = Status.Eating;
+			
+			//Signal to myself. Needs to be synchronized to work with notify();
+			synchronized(eatCondition[philosopherID]) {
+				// Signal the condition for eating. 
+						 eatCondition[philosopherID].notify(); 
+			}
+		}
+	}
+	
+	//Grants request (returns) to eat when both chopsticks/forks are available.
+	//Else forces the philosopher to wait()
+
+	public void pickUp(final int piTID)	
 	{
-		status[piTID-1] = Status.Hungry; //Set my status to hungry
-		test(piTID-1); // will return eating after this if it could
-		if(status[piTID-1] != Status.Hungry) {    //If I didnt return hungry , await for signal.
+		//To convert philosopher numbering to array indexing
+		int self = piTID-1;
+		
+		
+		status[self] = Status.Hungry;
+		//test if can start eating, if positive will return with status of Eating
+		testEat(self);
+		//If I didn't return eating, wait for signal
+		if(status[self] != Status.Eating && status[self]==Status.Hungry) {
 			try {
-				synchronized (myself_E) {
-	                myself_E.wait();
+				synchronized (eatCondition[self]) {
+	                eatCondition[self].wait();
 				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -97,24 +134,62 @@ public class Monitor
 	 */
 	public synchronized void putDown(final int piTID)
 	{
-		status[piTID-1] = Status.Thinking; // set my status back to thinking
-		test((piTID-1 + (nbOfChopsticks -1)) % nbOfChopsticks);  //make my left neighbour test
-		test((piTID-1 + (nbOfChopsticks +1)) % nbOfChopsticks); //make my right neighbour test
+		//To convert philosopher numbering to array indexing
+		int self = piTID-1;
+		//Find my left and right neighbour, add a full round to avoid negative indexes
+		int left = (self -1 + nbOfChopsticks) % nbOfChopsticks;
+		int right = (self + 1 + nbOfChopsticks) % nbOfChopsticks;
+		
+		status[self] = Status.Thinking; // set my status back to thinking
+		testEat(left);
+		testEat(right);
 	}
 
-	/**
-	 * Only one philosopher at a time is allowed to philosophy
-	 * (while she is not eating).
+	/*
+	 * -------------------------------
+	 * TALKING
+	 * -------------------------------
+	 * Logic: only one philosopher at a time can be talking. If one wants to talk, he becomes Talkative.
 	 */
-	public void requestTalk(final int piTID)
+	
+	private synchronized void testTalk(int i) { 
+
+		//Check if anyone is talking
+		for (int j=0; j<nbOfChopsticks; j++) {
+			if (status[j]==Status.Talking){
+				someoneTalking=true;
+				break;
+			}
+			else someoneTalking=false;
+		}
+		
+		//Check if I want to talk and no one else is talking
+		if (status[i] == Status.Talkative && 	
+				someoneTalking != true) 
+		{
+			status [i] = Status.Talking;
+			
+			synchronized(talkCondition) {
+				talkCondition.notify();
+			}
+		}
+	}
+	
+	
+	public synchronized void requestTalk(final int piTID)
 	{
-		status[piTID-1] = Status.Talkative;
-		testTalk(piTID-1);
-		if (status[piTID-1] != Status.Talking) {
+		//Convert philosopher's ID into array ID
+		int self = piTID-1;
+		
+		//Set myself as talkative since I want to talk
+		status[self] = Status.Talkative;
+		testTalk(self);
+		//If the testTalk() was good and no one was talking, I will return as Talking. If not, means I must wait
+		if (status[self] != Status.Talking) {
 			//Await
 			try {
-				synchronized (myself_T) {
-	                myself_T.wait();
+				synchronized (talkCondition) {
+	               talkCondition.wait();
 				}
 			}
 			catch (InterruptedException e){
@@ -131,44 +206,15 @@ public class Monitor
 	public synchronized void endTalk(final int piTID)
 	{
 		status[piTID-1] = Status.Thinking;
+		
+		//Check if anyone else wanted to talk. 
 		for (int j=0; j<nbOfChopsticks; j++) {
 			if (status[j]==Status.Talkative) 
 				testTalk(j);
 		}
 	}
-	//Do not remove 1 for the array index as it was removed when calling the method.
-	private synchronized void test(int philosopherID) {  // added to test neighbors philosophers for eating
-		if((status[ (philosopherID + (nbOfChopsticks - 1 ))% nbOfChopsticks] != Status.Eating) &&  // left neighbour not eating
-				(status[(philosopherID + (nbOfChopsticks + 1) )% nbOfChopsticks] != Status.Eating) && //right neighbour not eating
-				(status[philosopherID] == Status.Hungry)) //and i'm hungry
-		{
-			status[philosopherID] = Status.Eating; // set my status to eating
-			 synchronized (myself_E) {
-				 myself_E.notify(); // Signal the condition for eating. 
-			 }
-		}
-	}
 	
-	private synchronized void testTalk(int i) { 
 
-		
-		for (int j=0; j<nbOfChopsticks; j++) {
-			if (status[j]==Status.Talking){
-				someoneTalking=true;
-				break;
-			}
-			else someoneTalking=false;
-		}
-			
-		if (status[i] == Status.Talkative && 	//I want to talk
-				someoneTalking != true){		//and no one is talking
-				
-			status [i] = Status.Talking;
-			synchronized(myself_T) {
-				myself_T.notify();
-			}
-		}
-	}
 }
 
 

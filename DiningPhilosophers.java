@@ -80,7 +80,7 @@ public class DiningPhilosophers
 			reportException(e);
 			System.exit(1);
 		}
-	} // main()
+	} 
 
 	/**
 	 * Outputs exception information to STDERR

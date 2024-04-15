@@ -1,4 +1,6 @@
 import common.BaseThread;
+import java.util.Random;
+
 
 /**
  * Class Philosopher.
@@ -106,12 +108,8 @@ public class Philosopher extends BaseThread
 
 			think();
 
-			/*
-			 * TODO:
-			 * A decision is made at random whether this particular
-			 * philosopher is about to say something terribly useful.
-			 */
-			if(true == false)
+			boolean decideToTalk = decideTalk();
+			if (decideToTalk == true)
 			{
 				// Some monitor ops down here...
 				DiningPhilosophers.soMonitor.requestTalk(getTID());
@@ -145,6 +143,16 @@ public class Philosopher extends BaseThread
 			"Philosopher " + getTID() + " says: " +
 			astrPhrases[(int)(Math.random() * astrPhrases.length)]
 		);
+	}
+	
+	private boolean decideTalk() {
+		Random random = new Random();
+        
+        // Generate a random boolean value
+        boolean talk = random.nextBoolean();
+        
+        return talk;
+		
 	}
 }
 
